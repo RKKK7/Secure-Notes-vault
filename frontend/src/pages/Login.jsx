@@ -18,9 +18,18 @@ function Login() {
     setLoading(true);
     try {
       const res = await api.post('/auth/login', formData);
-      localStorage.setItem('token', res.data.data.token);
-      localStorage.setItem('username', res.data.data.username);
-      navigate('/dashboard');
+      const { token, username, role } = res.data.data;
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('username', username);
+      localStorage.setItem('role', role);
+
+      // Redirect based on role
+      if (role === 'ADMIN') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
     } finally {

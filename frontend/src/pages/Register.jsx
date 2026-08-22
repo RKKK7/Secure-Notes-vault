@@ -18,8 +18,13 @@ function Register() {
     setLoading(true);
     try {
       const res = await api.post('/auth/register', formData);
-      localStorage.setItem('token', res.data.data.token);
-      localStorage.setItem('username', res.data.data.username);
+      const { token, username, role } = res.data.data;
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('username', username);
+      localStorage.setItem('role', role);
+
+      // Regular registration always creates USER role
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
