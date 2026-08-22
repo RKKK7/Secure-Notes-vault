@@ -8,6 +8,7 @@ import com.securenotes.secure_notes_vault.exception.BadRequestException;
 import com.securenotes.secure_notes_vault.repository.UserRepository;
 import com.securenotes.secure_notes_vault.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,8 +23,11 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
 
-    public AuthResponse register(RegisterRequest request) {
+    @Value("${app.admin.secret}")
+    private String adminSecret;
 
+    // ── Register regular USER ──────────────────────────────────────
+    public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new BadRequestException("Username already exists");
         }
@@ -45,8 +49,34 @@ public class AuthService {
                 .build();
     }
 
-    public AuthResponse login(LoginRequest request) {
+    // ── Register ADMIN (requires admin secret key) ─────────────────
+    public AuthResponse registerAdmin(RegisterRequest request, String providedSecret) {
+        if (!adminSecret.equals(providedSecret)) {
+            throw new BadRequestException("Invalid admin secret key");
+        }
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new BadRequestException("Username already exists");
+        }
 
+        User user = User.builder()
+                .username(request.getUsername())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(User.Role.ADMIN)
+                .build();
+
+        userRepository.save(user);
+
+        String token = jwtUtil.generateToken(user.getUsername());
+
+        return AuthResponse.builder()
+                .token(token)
+                .username(user.getUsername())
+                .role(user.getRole().name())
+                .build();
+    }
+
+    // ── Login ──────────────────────────────────────────────────────
+    public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getUsername(),
