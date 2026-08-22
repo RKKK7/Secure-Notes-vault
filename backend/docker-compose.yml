@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+
+  # ── PostgreSQL Database ──────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: secure_notes_postgres
+    environment:
+      POSTGRES_DB: secure_notes_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── Spring Boot Application ──────────────────────────────────────
+  app:
+    build: .
+    container_name: secure_notes_app
+    ports:
+      - "8080:8080"
+    environment:
+      # Override datasource URL to use postgres service name (not localhost)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/secure_notes_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: f9a83b7c6d2e1a4f8c9b7e6d5a4c3f2e1b9d8c7a6e5f4d3c2b1a09e8f7d6c5b
+      JWT_EXPIRATION: 86400000
+      ENC_SECRET: b7f3c9e2a1d4f6b8c2e9a7f3d1b4c6e8
+      ADMIN_SECRET: admin_super_secret_2024
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
