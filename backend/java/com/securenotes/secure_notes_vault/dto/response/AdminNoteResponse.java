@@ -1,0 +1,22 @@
+package com.securenotes.secure_notes_vault.dto.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AdminNoteResponse {
+
+    private Long id;
+    private String title;
+    private String content;
+    private String owner;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+}
